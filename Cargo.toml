@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 cudd-sys = "1.0.0"
+logic-form = "0.1.1"

@@ -8,7 +8,7 @@ use std::{
 
 pub struct DdNode {
     manager: *mut cudd_sys::DdManager,
-    node: *mut cudd_sys::DdNode,
+    pub(crate) node: *mut cudd_sys::DdNode,
 }
 
 impl DdNode {

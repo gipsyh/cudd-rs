@@ -2,10 +2,10 @@ mod ddnode;
 pub use ddnode::*;
 
 use cudd_sys::cudd::{
-    Cudd_IndicesToCube, Cudd_Init, Cudd_ReadOne, Cudd_ReadZero, Cudd_bddIthVar, Cudd_bddNewVar,
+    Cudd_Init, Cudd_ReadOne, Cudd_ReadZero, Cudd_bddComputeCube, Cudd_bddIthVar, Cudd_bddNewVar,
     CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
 };
-use std::{ffi::c_int, usize};
+use std::{ptr::null, usize};
 
 pub struct Cudd {
     manager: *mut cudd_sys::DdManager,
@@ -38,10 +38,15 @@ impl Cudd {
 }
 
 impl Cudd {
-    pub fn indices_to_cube<I: IntoIterator<Item = usize>>(&mut self, indices: I) -> DdNode {
-        let mut indices: Vec<c_int> = indices.into_iter().map(|idx| idx as c_int).collect();
+    pub fn cube_bdd<'a, I: IntoIterator<Item = &'a DdNode>>(&mut self, cube: I) -> DdNode {
+        let mut indices: Vec<_> = cube.into_iter().map(|node| node.node).collect();
         DdNode::new(self.manager, unsafe {
-            Cudd_IndicesToCube(self.manager, indices.as_mut_ptr(), indices.len() as _)
+            Cudd_bddComputeCube(
+                self.manager,
+                indices.as_mut_ptr(),
+                null::<i32>() as _,
+                indices.len() as _,
+            )
         })
     }
 }
@@ -72,7 +77,10 @@ mod tests {
     #[test]
     fn test_indices_to_cube() {
         let mut cudd = Cudd::new();
-        let cube = cudd.indices_to_cube([0, 1, 3]);
-        assert_eq!(cube, cudd.ith_var(0) & cudd.ith_var(1) & cudd.ith_var(3));
+        let var0 = cudd.ith_var(0);
+        let var1 = cudd.ith_var(1);
+        let var3 = cudd.ith_var(3);
+        let cube = cudd.cube_bdd([&var0, &var1, &var3]);
+        assert_eq!(cube, var0 & var1 & var3);
     }
 }
