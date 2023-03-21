@@ -1,7 +1,9 @@
-use cudd_sys::cudd::{Cudd_PrintDebug, Cudd_RecursiveDeref, Cudd_Ref, Cudd_bddAnd, Cudd_bddOr};
+use cudd_sys::cudd::{
+    Cudd_Not, Cudd_PrintDebug, Cudd_RecursiveDeref, Cudd_Ref, Cudd_bddAnd, Cudd_bddOr, Cudd_bddXor,
+};
 use std::{
     fmt::Debug,
-    ops::{BitAnd, BitOr},
+    ops::{BitAnd, BitOr, BitXor, Not},
 };
 
 pub struct DdNode {
@@ -40,6 +42,25 @@ impl Clone for DdNode {
     }
 }
 
+impl PartialEq for DdNode {
+    fn eq(&self, other: &Self) -> bool {
+        assert!(self.manager == other.manager);
+        self.node == other.node
+    }
+}
+
+impl Eq for DdNode {
+    fn assert_receiver_is_total_eq(&self) {}
+}
+
+impl Not for DdNode {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        Self::new(self.manager, unsafe { Cudd_Not(self.node) })
+    }
+}
+
 impl BitAnd for DdNode {
     type Output = Self;
 
@@ -58,6 +79,17 @@ impl BitOr for DdNode {
         assert!(self.manager == rhs.manager);
         Self::new(self.manager, unsafe {
             Cudd_bddOr(self.manager, self.node, rhs.node)
+        })
+    }
+}
+
+impl BitXor for DdNode {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        assert!(self.manager == rhs.manager);
+        Self::new(self.manager, unsafe {
+            Cudd_bddXor(self.manager, self.node, rhs.node)
         })
     }
 }
