@@ -66,9 +66,7 @@ mod tests {
         let mut cudd = Cudd::new();
         let var0 = cudd.new_var();
         let var1 = cudd.new_var();
-        dbg!(&var0);
-        dbg!(&var1);
-        let and = var0.clone() & var1.clone();
+        let and = &var0 & &var1;
         dbg!(&and);
         let or = var0 | var1;
         dbg!(&or);

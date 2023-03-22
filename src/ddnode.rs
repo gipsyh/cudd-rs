@@ -61,12 +61,31 @@ impl Not for DdNode {
     }
 }
 
+impl Not for &DdNode {
+    type Output = DdNode;
+
+    fn not(self) -> Self::Output {
+        DdNode::new(self.manager, unsafe { Cudd_Not(self.node) })
+    }
+}
+
 impl BitAnd for DdNode {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self::Output {
         assert!(self.manager == rhs.manager);
         Self::new(self.manager, unsafe {
+            Cudd_bddAnd(self.manager, self.node, rhs.node)
+        })
+    }
+}
+
+impl BitAnd for &DdNode {
+    type Output = DdNode;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        assert!(self.manager == rhs.manager);
+        DdNode::new(self.manager, unsafe {
             Cudd_bddAnd(self.manager, self.node, rhs.node)
         })
     }
@@ -83,12 +102,34 @@ impl BitOr for DdNode {
     }
 }
 
+impl BitOr for &DdNode {
+    type Output = DdNode;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        assert!(self.manager == rhs.manager);
+        DdNode::new(self.manager, unsafe {
+            Cudd_bddOr(self.manager, self.node, rhs.node)
+        })
+    }
+}
+
 impl BitXor for DdNode {
     type Output = Self;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         assert!(self.manager == rhs.manager);
         Self::new(self.manager, unsafe {
+            Cudd_bddXor(self.manager, self.node, rhs.node)
+        })
+    }
+}
+
+impl BitXor for &DdNode {
+    type Output = DdNode;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        assert!(self.manager == rhs.manager);
+        DdNode::new(self.manager, unsafe {
             Cudd_bddXor(self.manager, self.node, rhs.node)
         })
     }
