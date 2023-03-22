@@ -3,7 +3,8 @@ pub use ddnode::*;
 
 use cudd_sys::cudd::{
     Cudd_Init, Cudd_Quit, Cudd_ReadLogicZero, Cudd_ReadOne, Cudd_ReadSize, Cudd_bddComputeCube,
-    Cudd_bddExistAbstract, Cudd_bddIthVar, Cudd_bddNewVar, CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
+    Cudd_bddExistAbstract, Cudd_bddIthVar, Cudd_bddNewVar, Cudd_bddSwapVariables, CUDD_CACHE_SLOTS,
+    CUDD_UNIQUE_SLOTS,
 };
 use std::{ptr::null, sync::Arc, usize};
 
@@ -80,6 +81,26 @@ impl Cudd {
         let cube = self.cube_bdd(cube.iter());
         DdNode::new(self.clone(), unsafe {
             Cudd_bddExistAbstract(self.inner.manager, f.node, cube.node)
+        })
+    }
+
+    pub fn swap_vars<IF: IntoIterator<Item = usize>, IT: IntoIterator<Item = usize>>(
+        &mut self,
+        node: &DdNode,
+        from: IF,
+        to: IT,
+    ) -> DdNode {
+        let mut from: Vec<_> = from.into_iter().map(|var| self.ith_var(var).node).collect();
+        let mut to: Vec<_> = to.into_iter().map(|var| self.ith_var(var).node).collect();
+        assert!(from.len() == to.len());
+        DdNode::new(self.clone(), unsafe {
+            Cudd_bddSwapVariables(
+                self.inner.manager,
+                node.node,
+                from.as_mut_ptr(),
+                to.as_mut_ptr(),
+                from.len() as _,
+            )
         })
     }
 }
