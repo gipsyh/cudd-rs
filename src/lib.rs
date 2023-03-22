@@ -2,7 +2,7 @@ mod ddnode;
 pub use ddnode::*;
 
 use cudd_sys::cudd::{
-    Cudd_Init, Cudd_Quit, Cudd_ReadOne, Cudd_ReadSize, Cudd_ReadZero, Cudd_bddComputeCube,
+    Cudd_Init, Cudd_Quit, Cudd_ReadLogicZero, Cudd_ReadOne, Cudd_ReadSize, Cudd_bddComputeCube,
     Cudd_bddExistAbstract, Cudd_bddIthVar, Cudd_bddNewVar, CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
 };
 use std::{ptr::null, sync::Arc, usize};
@@ -56,7 +56,9 @@ impl Cudd {
     }
 
     pub fn false_node(&self) -> DdNode {
-        DdNode::new(self.clone(), unsafe { Cudd_ReadZero(self.inner.manager) })
+        DdNode::new(self.clone(), unsafe {
+            Cudd_ReadLogicZero(self.inner.manager)
+        })
     }
 }
 
