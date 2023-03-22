@@ -1,10 +1,13 @@
 [package]
 name = "cudd"
 version = "0.1.0"
+license = "MIT"
+description = "Cudd Rust library"
 edition = "2021"
-
+repository = "https://github.com/gipsyh/cudd-rs"
+authors = ["Yuheng Su <gipsyh.icu@gmail.com>"]
+keywords = ["logic", "cudd", "bdd", "formal_method", "model_checking"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 cudd-sys = "1.0.0"
-logic-form = "0.1.1"

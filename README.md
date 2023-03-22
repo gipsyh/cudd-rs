@@ -1,3 +1,3 @@
 # cudd-rs
 
-Rust Cudd Library
+Cudd Rust Library
