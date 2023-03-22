@@ -1,7 +1,6 @@
 use crate::Cudd;
 use cudd_sys::cudd::{
-    Cudd_Not, Cudd_PrintDebug, Cudd_ReadOne, Cudd_ReadZero, Cudd_RecursiveDeref, Cudd_Ref,
-    Cudd_bddAnd, Cudd_bddOr, Cudd_bddXor,
+    Cudd_Not, Cudd_PrintDebug, Cudd_RecursiveDeref, Cudd_Ref, Cudd_bddAnd, Cudd_bddOr, Cudd_bddXor,
 };
 use std::{
     fmt::Debug,
@@ -139,10 +138,10 @@ impl BitXor for &DdNode {
 
 impl DdNode {
     pub fn is_true(&self) -> bool {
-        unsafe { Cudd_ReadOne(self.cudd.inner.manager) == self.node }
+        *self == self.cudd.true_node()
     }
 
     pub fn is_false(&self) -> bool {
-        unsafe { Cudd_ReadZero(self.cudd.inner.manager) == self.node }
+        *self == self.cudd.false_node()
     }
 }
