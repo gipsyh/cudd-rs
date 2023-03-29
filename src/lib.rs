@@ -120,10 +120,9 @@ mod tests {
         let mut cudd = Cudd::new();
         let var0 = cudd.new_var();
         let var1 = cudd.new_var();
-        let and = &var0 & &var1;
-        dbg!(&and);
-        let or = var0 | var1;
-        dbg!(&or);
+        let _and = &var0 & &var1;
+        let _or = &var0 | &var1;
+        let _xor = var0 ^ var1;
     }
 
     #[test]

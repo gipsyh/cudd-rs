@@ -1,6 +1,6 @@
 [package]
 name = "cudd"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 description = "Cudd Rust library"
 edition = "2021"
