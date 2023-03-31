@@ -4,7 +4,7 @@ use cudd_sys::cudd::{
 };
 use std::{
     fmt::Debug,
-    ops::{BitAnd, BitOr, BitXor, Not},
+    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
 };
 
 pub struct DdNode {
@@ -104,6 +104,14 @@ impl<T: AsRef<DdNode>> BitAnd<T> for &DdNode {
     }
 }
 
+#[allow(clippy::useless_asref)]
+impl<T: AsRef<DdNode>> BitAndAssign<T> for DdNode {
+    fn bitand_assign(&mut self, rhs: T) {
+        assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
+        *self = self.as_ref() & rhs.as_ref();
+    }
+}
+
 impl<T: AsRef<DdNode>> BitOr<T> for DdNode {
     type Output = DdNode;
 
@@ -126,6 +134,14 @@ impl<T: AsRef<DdNode>> BitOr<T> for &DdNode {
     }
 }
 
+#[allow(clippy::useless_asref)]
+impl<T: AsRef<DdNode>> BitOrAssign<T> for DdNode {
+    fn bitor_assign(&mut self, rhs: T) {
+        assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
+        *self = self.as_ref() | rhs.as_ref();
+    }
+}
+
 impl<T: AsRef<DdNode>> BitXor<T> for DdNode {
     type Output = DdNode;
 
@@ -145,6 +161,14 @@ impl<T: AsRef<DdNode>> BitXor<T> for &DdNode {
         DdNode::new(self.cudd.clone(), unsafe {
             Cudd_bddXor(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
+    }
+}
+
+#[allow(clippy::useless_asref)]
+impl<T: AsRef<DdNode>> BitXorAssign<T> for DdNode {
+    fn bitxor_assign(&mut self, rhs: T) {
+        assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
+        *self = self.as_ref() ^ rhs.as_ref();
     }
 }
 
