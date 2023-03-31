@@ -173,11 +173,7 @@ impl<T: AsRef<DdNode>> BitXorAssign<T> for DdNode {
 }
 
 impl DdNode {
-    pub fn is_true(&self) -> bool {
-        *self == self.cudd.true_node()
-    }
-
-    pub fn is_false(&self) -> bool {
-        *self == self.cudd.false_node()
+    pub fn is_constant(&self, value: bool) -> bool {
+        *self == self.cudd.constant(value)
     }
 }

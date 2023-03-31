@@ -52,13 +52,13 @@ impl Cudd {
         unsafe { Cudd_ReadSize(self.inner.manager) as _ }
     }
 
-    pub fn true_node(&self) -> DdNode {
-        DdNode::new(self.clone(), unsafe { Cudd_ReadOne(self.inner.manager) })
-    }
-
-    pub fn false_node(&self) -> DdNode {
+    pub fn constant(&self, value: bool) -> DdNode {
         DdNode::new(self.clone(), unsafe {
-            Cudd_ReadLogicZero(self.inner.manager)
+            if value {
+                Cudd_ReadOne(self.inner.manager)
+            } else {
+                Cudd_ReadLogicZero(self.inner.manager)
+            }
         })
     }
 }
