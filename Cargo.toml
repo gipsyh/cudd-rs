@@ -11,3 +11,5 @@ keywords = ["logic", "cudd", "bdd", "formal_method", "model_checking"]
 
 [dependencies]
 cudd-sys = "1.0.0"
+libc = "0.2.140"
+libc-stdhandle = "0.1.0"

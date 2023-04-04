@@ -2,11 +2,12 @@ mod ddnode;
 pub use ddnode::*;
 
 use cudd_sys::cudd::{
-    Cudd_Init, Cudd_Quit, Cudd_ReadLogicZero, Cudd_ReadOne, Cudd_ReadSize, Cudd_bddComputeCube,
-    Cudd_bddExistAbstract, Cudd_bddIthVar, Cudd_bddNewVar, Cudd_bddSwapVariables, CUDD_CACHE_SLOTS,
-    CUDD_UNIQUE_SLOTS,
+    Cudd_Init, Cudd_PrintInfo, Cudd_Quit, Cudd_ReadLogicZero, Cudd_ReadOne, Cudd_ReadSize,
+    Cudd_bddComputeCube, Cudd_bddExistAbstract, Cudd_bddIthVar, Cudd_bddNewVar,
+    Cudd_bddSwapVariables, CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
 };
-use std::{ptr::null, sync::Arc, usize};
+use libc_stdhandle::stdout;
+use std::{fmt::Debug, ptr::null, sync::Arc, usize};
 
 struct CuddInner {
     pub(crate) manager: *mut cudd_sys::DdManager,
@@ -102,6 +103,13 @@ impl Cudd {
                 from.len() as _,
             )
         })
+    }
+}
+
+impl Debug for Cudd {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unsafe { Cudd_PrintInfo(self.inner.manager, stdout()) };
+        std::fmt::Result::Ok(())
     }
 }
 
