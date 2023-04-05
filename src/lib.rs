@@ -3,8 +3,8 @@ pub use ddnode::*;
 
 use cudd_sys::cudd::{
     Cudd_Init, Cudd_PrintInfo, Cudd_Quit, Cudd_ReadLogicZero, Cudd_ReadOne, Cudd_ReadSize,
-    Cudd_bddComputeCube, Cudd_bddExistAbstract, Cudd_bddIthVar, Cudd_bddNewVar,
-    Cudd_bddSwapVariables, CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
+    Cudd_bddComputeCube, Cudd_bddExistAbstract, Cudd_bddIte, Cudd_bddIthVar, Cudd_bddNewVar,
+    Cudd_bddSwapVariables, Cudd_bddTransfer, CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
 };
 use libc_stdhandle::stdout;
 use std::{fmt::Debug, ptr::null, sync::Arc, usize};
@@ -62,6 +62,12 @@ impl Cudd {
             }
         })
     }
+
+    pub fn transfer(&self, dest: &mut Self, node: &DdNode) -> DdNode {
+        DdNode::new(dest.clone(), unsafe {
+            Cudd_bddTransfer(self.inner.manager, dest.inner.manager, node.node)
+        })
+    }
 }
 
 impl Cudd {
@@ -102,6 +108,12 @@ impl Cudd {
                 to.as_mut_ptr(),
                 from.len() as _,
             )
+        })
+    }
+
+    pub fn if_then_else(&mut self, _if: &DdNode, _then: &DdNode, _else: &DdNode) -> DdNode {
+        DdNode::new(self.clone(), unsafe {
+            Cudd_bddIte(self.inner.manager, _if.node, _then.node, _else.node)
         })
     }
 }
@@ -161,5 +173,17 @@ mod tests {
         let cube = cudd.cube_bdd([&var0, &var1, &var3]);
         let exist = cudd.exist_abstract(&cube, [0, 1, 2]);
         assert_eq!(exist, var3);
+    }
+
+    #[test]
+    fn test_transfer() {
+        let mut cudd_from = Cudd::new();
+        let var0 = cudd_from.ith_var(0);
+        let var1 = cudd_from.ith_var(1);
+        let mut cudd_to = Cudd::new();
+        let node = cudd_from.transfer(&mut cudd_to, &(var0 & var1));
+        let var0 = cudd_to.ith_var(0);
+        let var1 = cudd_to.ith_var(1);
+        assert_eq!(node, var0 & var1);
     }
 }
