@@ -39,12 +39,12 @@ impl Cudd {
         }
     }
 
-    pub fn new_var(&self) -> DdNode {
-        DdNode::new(self.clone(), unsafe { Cudd_bddNewVar(self.inner.manager) })
+    pub fn new_var(&self) -> Bdd {
+        Bdd::new(self.clone(), unsafe { Cudd_bddNewVar(self.inner.manager) })
     }
 
-    pub fn ith_var(&self, i: usize) -> DdNode {
-        DdNode::new(self.clone(), unsafe {
+    pub fn ith_var(&self, i: usize) -> Bdd {
+        Bdd::new(self.clone(), unsafe {
             Cudd_bddIthVar(self.inner.manager, i as _)
         })
     }
@@ -53,8 +53,8 @@ impl Cudd {
         unsafe { Cudd_ReadSize(self.inner.manager) as _ }
     }
 
-    pub fn constant(&self, value: bool) -> DdNode {
-        DdNode::new(self.clone(), unsafe {
+    pub fn constant(&self, value: bool) -> Bdd {
+        Bdd::new(self.clone(), unsafe {
             if value {
                 Cudd_ReadOne(self.inner.manager)
             } else {
@@ -63,17 +63,17 @@ impl Cudd {
         })
     }
 
-    pub fn translocate(&self, node: &DdNode) -> DdNode {
-        DdNode::new(self.clone(), unsafe {
+    pub fn translocate(&self, node: &Bdd) -> Bdd {
+        Bdd::new(self.clone(), unsafe {
             Cudd_bddTransfer(node.cudd.inner.manager, self.inner.manager, node.node)
         })
     }
 }
 
 impl Cudd {
-    pub fn cube_bdd<'a, I: IntoIterator<Item = &'a DdNode>>(&self, cube: I) -> DdNode {
+    pub fn cube_bdd<'a, I: IntoIterator<Item = &'a Bdd>>(&self, cube: I) -> Bdd {
         let mut indices: Vec<_> = cube.into_iter().map(|node| node.node).collect();
-        DdNode::new(self.clone(), unsafe {
+        Bdd::new(self.clone(), unsafe {
             Cudd_bddComputeCube(
                 self.inner.manager,
                 indices.as_mut_ptr(),

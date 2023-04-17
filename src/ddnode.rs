@@ -9,12 +9,12 @@ use std::{
     ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
 };
 
-pub struct DdNode {
+pub struct Bdd {
     pub(crate) cudd: Cudd,
     pub(crate) node: *mut cudd_sys::DdNode,
 }
 
-impl DdNode {
+impl Bdd {
     pub(crate) fn new(cudd: Cudd, node: *mut cudd_sys::DdNode) -> Self {
         assert!(!node.is_null());
         unsafe { Cudd_Ref(node) };
@@ -22,29 +22,29 @@ impl DdNode {
     }
 }
 
-impl Drop for DdNode {
+impl Drop for Bdd {
     fn drop(&mut self) {
         unsafe { Cudd_RecursiveDeref(self.cudd.inner.manager, self.node) };
     }
 }
 
-unsafe impl Send for DdNode {}
+unsafe impl Send for Bdd {}
 
-unsafe impl Sync for DdNode {}
+unsafe impl Sync for Bdd {}
 
-impl AsRef<DdNode> for DdNode {
-    fn as_ref(&self) -> &DdNode {
+impl AsRef<Bdd> for Bdd {
+    fn as_ref(&self) -> &Bdd {
         self
     }
 }
 
-impl AsMut<DdNode> for DdNode {
-    fn as_mut(&mut self) -> &mut DdNode {
+impl AsMut<Bdd> for Bdd {
+    fn as_mut(&mut self) -> &mut Bdd {
         self
     }
 }
 
-impl Debug for DdNode {
+impl Debug for Bdd {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // unsafe { Cudd_PrintDebug(self.cudd.inner.manager, self.node, 1, 9) };
         unsafe { Cudd_PrintMinterm(self.cudd.inner.manager, self.node) };
@@ -52,7 +52,7 @@ impl Debug for DdNode {
     }
 }
 
-impl Clone for DdNode {
+impl Clone for Bdd {
     fn clone(&self) -> Self {
         unsafe { Cudd_Ref(self.node) };
         Self {
@@ -62,18 +62,18 @@ impl Clone for DdNode {
     }
 }
 
-impl PartialEq for DdNode {
+impl PartialEq for Bdd {
     fn eq(&self, other: &Self) -> bool {
         assert!(self.cudd.inner == other.cudd.inner);
         self.node == other.node
     }
 }
 
-impl Eq for DdNode {
+impl Eq for Bdd {
     fn assert_receiver_is_total_eq(&self) {}
 }
 
-impl Not for DdNode {
+impl Not for Bdd {
     type Output = Self;
 
     fn not(self) -> Self::Output {
@@ -81,105 +81,105 @@ impl Not for DdNode {
     }
 }
 
-impl Not for &DdNode {
-    type Output = DdNode;
+impl Not for &Bdd {
+    type Output = Bdd;
 
     fn not(self) -> Self::Output {
-        DdNode::new(self.cudd.clone(), unsafe { Cudd_Not(self.node) })
+        Bdd::new(self.cudd.clone(), unsafe { Cudd_Not(self.node) })
     }
 }
 
-impl<T: AsRef<DdNode>> BitAnd<T> for DdNode {
-    type Output = DdNode;
+impl<T: AsRef<Bdd>> BitAnd<T> for Bdd {
+    type Output = Bdd;
 
     fn bitand(self, rhs: T) -> Self::Output {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddAnd(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
     }
 }
 
-impl<T: AsRef<DdNode>> BitAnd<T> for &DdNode {
-    type Output = DdNode;
+impl<T: AsRef<Bdd>> BitAnd<T> for &Bdd {
+    type Output = Bdd;
 
     fn bitand(self, rhs: T) -> Self::Output {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddAnd(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
     }
 }
 
 #[allow(clippy::useless_asref)]
-impl<T: AsRef<DdNode>> BitAndAssign<T> for DdNode {
+impl<T: AsRef<Bdd>> BitAndAssign<T> for Bdd {
     fn bitand_assign(&mut self, rhs: T) {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
         *self = self.as_ref() & rhs.as_ref();
     }
 }
 
-impl<T: AsRef<DdNode>> BitOr<T> for DdNode {
-    type Output = DdNode;
+impl<T: AsRef<Bdd>> BitOr<T> for Bdd {
+    type Output = Bdd;
 
     fn bitor(self, rhs: T) -> Self::Output {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddOr(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
     }
 }
 
-impl<T: AsRef<DdNode>> BitOr<T> for &DdNode {
-    type Output = DdNode;
+impl<T: AsRef<Bdd>> BitOr<T> for &Bdd {
+    type Output = Bdd;
 
     fn bitor(self, rhs: T) -> Self::Output {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddOr(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
     }
 }
 
 #[allow(clippy::useless_asref)]
-impl<T: AsRef<DdNode>> BitOrAssign<T> for DdNode {
+impl<T: AsRef<Bdd>> BitOrAssign<T> for Bdd {
     fn bitor_assign(&mut self, rhs: T) {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
         *self = self.as_ref() | rhs.as_ref();
     }
 }
 
-impl<T: AsRef<DdNode>> BitXor<T> for DdNode {
-    type Output = DdNode;
+impl<T: AsRef<Bdd>> BitXor<T> for Bdd {
+    type Output = Bdd;
 
     fn bitxor(self, rhs: T) -> Self::Output {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddXor(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
     }
 }
 
-impl<T: AsRef<DdNode>> BitXor<T> for &DdNode {
-    type Output = DdNode;
+impl<T: AsRef<Bdd>> BitXor<T> for &Bdd {
+    type Output = Bdd;
 
     fn bitxor(self, rhs: T) -> Self::Output {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddXor(self.cudd.inner.manager, self.node, rhs.as_ref().node)
         })
     }
 }
 
 #[allow(clippy::useless_asref)]
-impl<T: AsRef<DdNode>> BitXorAssign<T> for DdNode {
+impl<T: AsRef<Bdd>> BitXorAssign<T> for Bdd {
     fn bitxor_assign(&mut self, rhs: T) {
         assert!(self.cudd.inner == rhs.as_ref().cudd.inner);
         *self = self.as_ref() ^ rhs.as_ref();
     }
 }
 
-impl DdNode {
+impl Bdd {
     pub fn is_constant(&self, value: bool) -> bool {
         *self == self.cudd.constant(value)
     }
@@ -189,8 +189,8 @@ impl DdNode {
         size as _
     }
 
-    pub fn support(&self) -> DdNode {
-        DdNode::new(self.cudd.clone(), unsafe {
+    pub fn support(&self) -> Bdd {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_Support(self.cudd.inner.manager, self.node)
         })
     }
@@ -212,18 +212,18 @@ impl DdNode {
         ret
     }
 
-    pub fn exist_abstract<I: IntoIterator<Item = usize>>(&self, vars: I) -> DdNode {
-        let cube: Vec<DdNode> = vars.into_iter().map(|var| self.cudd.ith_var(var)).collect();
+    pub fn exist_abstract<I: IntoIterator<Item = usize>>(&self, vars: I) -> Bdd {
+        let cube: Vec<Bdd> = vars.into_iter().map(|var| self.cudd.ith_var(var)).collect();
         let cube = self.cudd.cube_bdd(cube.iter());
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddExistAbstract(self.cudd.inner.manager, self.node, cube.node)
         })
     }
 
-    pub fn and_abstract<I: IntoIterator<Item = usize>>(&self, f: &DdNode, vars: I) -> DdNode {
-        let cube: Vec<DdNode> = vars.into_iter().map(|var| self.cudd.ith_var(var)).collect();
+    pub fn and_abstract<I: IntoIterator<Item = usize>>(&self, f: &Bdd, vars: I) -> Bdd {
+        let cube: Vec<Bdd> = vars.into_iter().map(|var| self.cudd.ith_var(var)).collect();
         let cube = self.cudd.cube_bdd(cube.iter());
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddAndAbstract(self.cudd.inner.manager, self.node, f.node, cube.node)
         })
     }
@@ -232,7 +232,7 @@ impl DdNode {
         &self,
         from: IF,
         to: IT,
-    ) -> DdNode {
+    ) -> Bdd {
         let mut from: Vec<_> = from
             .into_iter()
             .map(|var| self.cudd.ith_var(var).node)
@@ -242,7 +242,7 @@ impl DdNode {
             .map(|var| self.cudd.ith_var(var).node)
             .collect();
         assert!(from.len() == to.len());
-        DdNode::new(self.cudd.clone(), unsafe {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddSwapVariables(
                 self.cudd.inner.manager,
                 self.node,
@@ -253,14 +253,14 @@ impl DdNode {
         })
     }
 
-    pub fn if_then_else(&self, _then: &DdNode, _else: &DdNode) -> DdNode {
-        DdNode::new(self.cudd.clone(), unsafe {
+    pub fn if_then_else(&self, _then: &Bdd, _else: &Bdd) -> Bdd {
+        Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddIte(self.cudd.inner.manager, self.node, _then.node, _else.node)
         })
     }
 }
 
-impl DdNode {
+impl Bdd {
     pub fn next_state(&self) -> Self {
         let vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 0);
         let next_vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 1);
