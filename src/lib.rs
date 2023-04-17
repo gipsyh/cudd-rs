@@ -3,8 +3,8 @@ pub use ddnode::*;
 
 use cudd_sys::cudd::{
     Cudd_Init, Cudd_PrintInfo, Cudd_Quit, Cudd_ReadLogicZero, Cudd_ReadOne, Cudd_ReadSize,
-    Cudd_bddComputeCube, Cudd_bddExistAbstract, Cudd_bddIte, Cudd_bddIthVar, Cudd_bddNewVar,
-    Cudd_bddSwapVariables, Cudd_bddTransfer, CUDD_CACHE_SLOTS, CUDD_UNIQUE_SLOTS,
+    Cudd_bddComputeCube, Cudd_bddIthVar, Cudd_bddNewVar, Cudd_bddTransfer, CUDD_CACHE_SLOTS,
+    CUDD_UNIQUE_SLOTS,
 };
 use libc_stdhandle::stdout;
 use std::{fmt::Debug, ptr::null, sync::Arc, usize};
@@ -39,11 +39,11 @@ impl Cudd {
         }
     }
 
-    pub fn new_var(&mut self) -> DdNode {
+    pub fn new_var(&self) -> DdNode {
         DdNode::new(self.clone(), unsafe { Cudd_bddNewVar(self.inner.manager) })
     }
 
-    pub fn ith_var(&mut self, i: usize) -> DdNode {
+    pub fn ith_var(&self, i: usize) -> DdNode {
         DdNode::new(self.clone(), unsafe {
             Cudd_bddIthVar(self.inner.manager, i as _)
         })
@@ -63,15 +63,15 @@ impl Cudd {
         })
     }
 
-    pub fn transfer(&self, dest: &mut Self, node: &DdNode) -> DdNode {
-        DdNode::new(dest.clone(), unsafe {
-            Cudd_bddTransfer(self.inner.manager, dest.inner.manager, node.node)
+    pub fn translocate(&self, node: &DdNode) -> DdNode {
+        DdNode::new(self.clone(), unsafe {
+            Cudd_bddTransfer(node.cudd.inner.manager, self.inner.manager, node.node)
         })
     }
 }
 
 impl Cudd {
-    pub fn cube_bdd<'a, I: IntoIterator<Item = &'a DdNode>>(&mut self, cube: I) -> DdNode {
+    pub fn cube_bdd<'a, I: IntoIterator<Item = &'a DdNode>>(&self, cube: I) -> DdNode {
         let mut indices: Vec<_> = cube.into_iter().map(|node| node.node).collect();
         DdNode::new(self.clone(), unsafe {
             Cudd_bddComputeCube(
@@ -80,40 +80,6 @@ impl Cudd {
                 null::<i32>() as _,
                 indices.len() as _,
             )
-        })
-    }
-
-    pub fn exist_abstract<I: IntoIterator<Item = usize>>(&mut self, f: &DdNode, vars: I) -> DdNode {
-        let cube: Vec<DdNode> = vars.into_iter().map(|var| self.ith_var(var)).collect();
-        let cube = self.cube_bdd(cube.iter());
-        DdNode::new(self.clone(), unsafe {
-            Cudd_bddExistAbstract(self.inner.manager, f.node, cube.node)
-        })
-    }
-
-    pub fn swap_vars<IF: IntoIterator<Item = usize>, IT: IntoIterator<Item = usize>>(
-        &mut self,
-        node: &DdNode,
-        from: IF,
-        to: IT,
-    ) -> DdNode {
-        let mut from: Vec<_> = from.into_iter().map(|var| self.ith_var(var).node).collect();
-        let mut to: Vec<_> = to.into_iter().map(|var| self.ith_var(var).node).collect();
-        assert!(from.len() == to.len());
-        DdNode::new(self.clone(), unsafe {
-            Cudd_bddSwapVariables(
-                self.inner.manager,
-                node.node,
-                from.as_mut_ptr(),
-                to.as_mut_ptr(),
-                from.len() as _,
-            )
-        })
-    }
-
-    pub fn if_then_else(&mut self, _if: &DdNode, _then: &DdNode, _else: &DdNode) -> DdNode {
-        DdNode::new(self.clone(), unsafe {
-            Cudd_bddIte(self.inner.manager, _if.node, _then.node, _else.node)
         })
     }
 }
@@ -131,13 +97,15 @@ impl Default for Cudd {
     }
 }
 
+unsafe impl Send for Cudd {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test() {
-        let mut cudd = Cudd::new();
+        let cudd = Cudd::new();
         let var0 = cudd.new_var();
         let var1 = cudd.new_var();
         let _and = &var0 & &var1;
@@ -147,7 +115,7 @@ mod tests {
 
     #[test]
     fn test_num_var() {
-        let mut cudd = Cudd::new();
+        let cudd = Cudd::new();
         cudd.ith_var(0);
         cudd.ith_var(1);
         cudd.ith_var(3);
@@ -156,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_indices_to_cube() {
-        let mut cudd = Cudd::new();
+        let cudd = Cudd::new();
         let var0 = cudd.ith_var(0);
         let var1 = cudd.ith_var(1);
         let var3 = cudd.ith_var(3);
@@ -166,24 +134,38 @@ mod tests {
 
     #[test]
     fn test_exist_abstract() {
-        let mut cudd = Cudd::new();
+        let cudd = Cudd::new();
         let var0 = cudd.ith_var(0);
         let var1 = cudd.ith_var(1);
         let var3 = cudd.ith_var(3);
         let cube = cudd.cube_bdd([&var0, &var1, &var3]);
-        let exist = cudd.exist_abstract(&cube, [0, 1, 2]);
+        let exist = cube.exist_abstract([0, 1, 2]);
         assert_eq!(exist, var3);
     }
 
     #[test]
     fn test_transfer() {
-        let mut cudd_from = Cudd::new();
+        let cudd_from = Cudd::new();
         let var0 = cudd_from.ith_var(0);
         let var1 = cudd_from.ith_var(1);
-        let mut cudd_to = Cudd::new();
-        let node = cudd_from.transfer(&mut cudd_to, &(var0 & var1));
+        let cudd_to = Cudd::new();
+        let node = cudd_to.translocate(&(var0 & var1));
         let var0 = cudd_to.ith_var(0);
         let var1 = cudd_to.ith_var(1);
         assert_eq!(node, var0 & var1);
+    }
+
+    #[test]
+    fn test_support() {
+        let cudd = Cudd::new();
+        let x = cudd.ith_var(2);
+        assert_eq!(x.support(), x);
+    }
+
+    #[test]
+    fn test_support_index() {
+        let cudd = Cudd::new();
+        let x = cudd.ith_var(2);
+        assert_eq!(x.support_index(), vec![2]);
     }
 }
