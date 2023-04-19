@@ -266,4 +266,19 @@ impl Bdd {
         let next_vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 1);
         self.swap_vars(vars, next_vars)
     }
+
+    pub fn pre_image(&self, trans: &Self) -> Self {
+        let vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 0);
+        let next_vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 1);
+        let mut bdd = self.swap_vars(vars, next_vars.clone());
+        bdd = bdd.and_abstract(trans, next_vars);
+        bdd
+    }
+
+    pub fn post_image(&self, trans: &Self) -> Self {
+        let vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 0);
+        let next_vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 1);
+        let bdd = self.and_abstract(trans, vars.clone());
+        bdd.swap_vars(next_vars, vars)
+    }
 }
