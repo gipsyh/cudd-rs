@@ -11,7 +11,7 @@ use std::{
 
 pub struct Bdd {
     pub(crate) cudd: Cudd,
-    pub(crate) node: *mut cudd_sys::DdNode,
+    pub node: *mut cudd_sys::DdNode,
 }
 
 impl Bdd {
@@ -213,16 +213,14 @@ impl Bdd {
     }
 
     pub fn exist_abstract<I: IntoIterator<Item = usize>>(&self, vars: I) -> Bdd {
-        let cube: Vec<Bdd> = vars.into_iter().map(|var| self.cudd.ith_var(var)).collect();
-        let cube = self.cudd.cube_bdd(cube.iter());
+        let cube = self.cudd.cube(vars);
         Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddExistAbstract(self.cudd.inner.manager, self.node, cube.node)
         })
     }
 
     pub fn and_abstract<I: IntoIterator<Item = usize>>(&self, f: &Bdd, vars: I) -> Bdd {
-        let cube: Vec<Bdd> = vars.into_iter().map(|var| self.cudd.ith_var(var)).collect();
-        let cube = self.cudd.cube_bdd(cube.iter());
+        let cube = self.cudd.cube(vars);
         Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddAndAbstract(self.cudd.inner.manager, self.node, f.node, cube.node)
         })
@@ -261,6 +259,12 @@ impl Bdd {
 }
 
 impl Bdd {
+    pub fn previous_state(&self) -> Self {
+        let vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 0);
+        let next_vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 1);
+        self.swap_vars(next_vars, vars)
+    }
+
     pub fn next_state(&self) -> Self {
         let vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 0);
         let next_vars = (0..self.cudd.num_var()).filter(|x| x % 2 == 1);

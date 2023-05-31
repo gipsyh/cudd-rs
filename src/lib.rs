@@ -1,4 +1,5 @@
 mod ddnode;
+
 pub use ddnode::*;
 
 use cudd_sys::cudd::{
@@ -7,7 +8,12 @@ use cudd_sys::cudd::{
     CUDD_UNIQUE_SLOTS,
 };
 use libc_stdhandle::stdout;
-use std::{fmt::Debug, ptr::null, sync::Arc, usize};
+use std::{
+    fmt::Debug,
+    ptr::null,
+    sync::{Arc, Mutex},
+    usize,
+};
 
 struct CuddInner {
     pub(crate) manager: *mut cudd_sys::DdManager,
@@ -27,7 +33,14 @@ impl Drop for CuddInner {
 
 #[derive(Clone)]
 pub struct Cudd {
+    pub num_transfer: Arc<Mutex<usize>>,
     inner: Arc<CuddInner>,
+}
+
+impl PartialEq for Cudd {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
 }
 
 impl Cudd {
@@ -35,6 +48,7 @@ impl Cudd {
         let manager = unsafe { Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0) };
         assert!(!manager.is_null());
         Self {
+            num_transfer: Arc::new(Mutex::new(0)),
             inner: Arc::new(CuddInner { manager }),
         }
     }
@@ -64,6 +78,10 @@ impl Cudd {
     }
 
     pub fn translocate(&self, node: &Bdd) -> Bdd {
+        *self.num_transfer.lock().unwrap() += 1;
+        if self.inner == node.cudd.inner {
+            return node.clone();
+        }
         Bdd::new(self.clone(), unsafe {
             Cudd_bddTransfer(node.cudd.inner.manager, self.inner.manager, node.node)
         })
@@ -71,8 +89,8 @@ impl Cudd {
 }
 
 impl Cudd {
-    pub fn cube_bdd<'a, I: IntoIterator<Item = &'a Bdd>>(&self, cube: I) -> Bdd {
-        let mut indices: Vec<_> = cube.into_iter().map(|node| node.node).collect();
+    pub fn cube<I: IntoIterator<Item = usize>>(&self, cube: I) -> Bdd {
+        let mut indices: Vec<_> = cube.into_iter().map(|var| self.ith_var(var).node).collect();
         Bdd::new(self.clone(), unsafe {
             Cudd_bddComputeCube(
                 self.inner.manager,
@@ -128,17 +146,15 @@ mod tests {
         let var0 = cudd.ith_var(0);
         let var1 = cudd.ith_var(1);
         let var3 = cudd.ith_var(3);
-        let cube = cudd.cube_bdd([&var0, &var1, &var3]);
+        let cube = cudd.cube([0, 1, 3]);
         assert_eq!(cube, var0 & var1 & var3);
     }
 
     #[test]
     fn test_exist_abstract() {
         let cudd = Cudd::new();
-        let var0 = cudd.ith_var(0);
-        let var1 = cudd.ith_var(1);
         let var3 = cudd.ith_var(3);
-        let cube = cudd.cube_bdd([&var0, &var1, &var3]);
+        let cube = cudd.cube([0, 1, 3]);
         let exist = cube.exist_abstract([0, 1, 2]);
         assert_eq!(exist, var3);
     }
