@@ -213,14 +213,14 @@ impl Bdd {
     }
 
     pub fn exist_abstract<I: IntoIterator<Item = usize>>(&self, vars: I) -> Bdd {
-        let cube = self.cudd.cube(vars);
+        let cube = self.cudd.cube(vars.into_iter().map(|x| (x, true)));
         Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddExistAbstract(self.cudd.inner.manager, self.node, cube.node)
         })
     }
 
     pub fn and_abstract<I: IntoIterator<Item = usize>>(&self, f: &Bdd, vars: I) -> Bdd {
-        let cube = self.cudd.cube(vars);
+        let cube = self.cudd.cube(vars.into_iter().map(|x| (x, true)));
         Bdd::new(self.cudd.clone(), unsafe {
             Cudd_bddAndAbstract(self.cudd.inner.manager, self.node, f.node, cube.node)
         })

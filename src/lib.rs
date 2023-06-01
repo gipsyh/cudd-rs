@@ -89,8 +89,18 @@ impl Cudd {
 }
 
 impl Cudd {
-    pub fn cube<I: IntoIterator<Item = usize>>(&self, cube: I) -> Bdd {
-        let mut indices: Vec<_> = cube.into_iter().map(|var| self.ith_var(var).node).collect();
+    pub fn cube<I: IntoIterator<Item = (usize, bool)>>(&self, cube: I) -> Bdd {
+        let mut indices: Vec<_> = cube
+            .into_iter()
+            .map(|(var, pol)| {
+                if pol {
+                    self.ith_var(var)
+                } else {
+                    !self.ith_var(var)
+                }
+                .node
+            })
+            .collect();
         Bdd::new(self.clone(), unsafe {
             Cudd_bddComputeCube(
                 self.inner.manager,
@@ -146,7 +156,7 @@ mod tests {
         let var0 = cudd.ith_var(0);
         let var1 = cudd.ith_var(1);
         let var3 = cudd.ith_var(3);
-        let cube = cudd.cube([0, 1, 3]);
+        let cube = cudd.cube([(0, true), (1, true), (3, true)]);
         assert_eq!(cube, var0 & var1 & var3);
     }
 
@@ -154,7 +164,7 @@ mod tests {
     fn test_exist_abstract() {
         let cudd = Cudd::new();
         let var3 = cudd.ith_var(3);
-        let cube = cudd.cube([0, 1, 3]);
+        let cube = cudd.cube([(0, true), (1, true), (3, true)]);
         let exist = cube.exist_abstract([0, 1, 2]);
         assert_eq!(exist, var3);
     }
